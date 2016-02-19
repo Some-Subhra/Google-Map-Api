@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="http://maps.googleapis.com/maps/api/js"></script>
+
+<script>
+
+var stationList = [
+  {"latlng":[26.69163742147271,89.60723876953125],name:"1. Jayanti Forest"},
+  {"latlng":[27.547241546253293,90.494384765625],name:"2. Bhutan"},
+  {"latlng":[27.702983735525834,88.57177734375],name:"3. Sikkim"},
+  {"latlng":[23.563987128451227,87.36328125],name:"4. Purulia"}
+  //{"latlng":[24.00632619875113,87.890625],name:"Reset"}
+];
+var infoWnd, mapCanvas, test, show;
+
+var initPos = new google.maps.LatLng(25.304303764403617,87.47314453125);
+
+function initialize() {
+  //Creates a map object.
+  var mapDiv = document.getElementById("map_canvas");
+  mapCanvas = new google.maps.Map(mapDiv);
+  mapCanvas.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+  //Creates a infowindow object.
+  infoWnd = new google.maps.InfoWindow();
+  
+  //Mapping markers on the map
+ // bounds = new google.maps.LatLngBounds();
+  
+  mapCanvas.setCenter(initPos);
+  mapCanvas.setZoom(6);
+  
+  
+  var station, i, latlng;
+  for (i in stationList) {
+    //Creates a marker
+    station = stationList[i];
+    latlng = new google.maps.LatLng(station.latlng[0], station.latlng[1]);
+   // bounds.extend(latlng);
+    var marker = createMarker(
+      mapCanvas, latlng, station.name
+    );
+    
+    //Creates a sidebar button for the marker
+    createMarkerButton(marker);
+   
+  }
+  //Fits the map bounds
+ // mapCanvas.fitBounds(bounds);
+ //Retrive the center location
+  google.maps.event.addListener(mapCanvas, "zoom_changed", function() {
+	if(mapCanvas.getZoom()!=6){
+		if($('.reset').hasClass('hiddena')){
+			$('.reset').removeClass('hiddena');
+			$('.reset').addClass('shown');
+		}
+	}
+	else{
+		if($('.reset').hasClass('shown')){
+		$('.reset').removeClass('shown');
+				$('.reset').addClass('hiddena');
+				
+			}
+	}
+  });
+  
+  
+}
+
+function reset(){
+infoWnd.close();
+mapCanvas.setZoom(6);
+mapCanvas.setCenter(initPos);
+$('.loc').removeClass('active');
+}
+
+
+function createMarker(map, latlng, title) {
+  //Creates a marker
+  var marker = new google.maps.Marker({
+    position : latlng,
+    map : map,
+	animation: google.maps.Animation.DROP,
+    title : title,
+  });
+  
+ //The infoWindow is opened when the sidebar button is clicked
+    google.maps.event.addListener(marker, "click", function(){
+    infoWnd.setContent("<strong>" + title + "</strong> <br>" + "<img src='marker.png' class='map-image img-thumbnail' width='150' height='100' alt='marker'><P class='map-description'> This is the area</p>");
+    infoWnd.open(map, marker);
+    map.setZoom(7);
+    map.setCenter(marker.getPosition());
+    
+	 if(test) {
+     google.maps.event.removeListener(test);
+     }
+     
+    test = google.maps.event.addListener(infoWnd, "closeclick", function(){
+    reset();
+    });
+
+	 
+  });
+   
+  return marker;
+}
+function createMarkerButton(marker) {
+  //Creates a sidebar button
+  var ul = document.getElementById("marker_list");
+  var li = document.createElement("li");
+  $(li).addClass('loc');
+  var title = marker.getTitle();
+  li.innerHTML = title;
+  ul.appendChild(li);
+  
+  
+  
+//placing the Reset button at last  
+var last = $('#marker_list').children().last();
+var resetButton = $('.reset');
+$(resetButton).insertAfter(last);
+  
+  //Trigger a click event to marker when the button is clicked.
+  google.maps.event.addDomListener(li, "click", function(){
+  	show = this;
+  	if($('.loc').hasClass('active')){
+  		$('.loc').removeClass('active');
+  	}
+  	$(show).addClass('active');
+    google.maps.event.trigger(marker, "click");
+    
+  });
+  
+  google.maps.event.addListener(marker, "click", function() {
+	  var m_title = marker.title;
+	  for (i in stationList) {
+	 if(stationList[i].name==m_title){
+				$("#marker_list li").filter(function () {
+				var text = $(this).text();
+				if($('.loc').hasClass('active')){
+					$('.loc').removeClass('active');
+				}
+				return text === m_title;
+			}).addClass("active");
+	  	}
+	  }
+	});
+
+}
+
+
+google.maps.event.addDomListener(window, "load", initialize);
+
+
+</script>
+
+<style type="text/css">
+#content{
+margin: 5% 0;
+}
+
+#map_canvas {
+	height: 500px;
+	background-color: rgb(229, 227, 223);
+    margin: 5px 0;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+}
+ul#marker_list {
+	margin: 0;
+	padding: 0 5px;
+}
+ul#marker_list li {
+	list-style: none;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: #eeeeee;
+    margin: 5px 0;
+    padding: 5px 5px;
+    text-align: left;
+    border-radius: 2px;
+} 
+ul#marker_list li.reset{
+    margin: 15px 0;
+     text-align: center;
+}
+
+.hiddena
+{
+ opacity: 0;
+transition: opacity 0.6s ease-in-out;
+-moz-transition: opacity 0.6s ease-in-out;
+-webkit-transition: opacity 0.6s ease-in-out;
+}
+
+.shown {
+ opacity: 1;
+transition: opacity 0.6s ease-in-out;
+-moz-transition: opacity 0.6s ease-in-out;
+-webkit-transition: opacity 0.6s ease-in-out;
+}
+
+ul#marker_list li.loc.active, ul#marker_list li.reset{
+background-color: #3e503e;
+color:#fff;
+}
+
+</style>
+	
+	
+	
+</head>
+
+<body>
+<div class="container">
+	<div id="content" class="row">
+		<ul id="marker_list" class="col-lg-2 col-md-3">
+		<li class='reset hiddena' onclick="reset()">Reset</li>
+		</ul>
+		<div id="map_canvas" class="col-lg-10 col-md-9"></div>
+	</div>	
+</div>
+
+
+</body>
+</html>
